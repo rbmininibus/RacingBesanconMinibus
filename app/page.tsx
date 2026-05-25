@@ -177,10 +177,9 @@ export default function Home() {
 
       {/* NAV */}
       <nav style={{ background: '#111', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-<img src="https://i.imgur.com/uFFm3Lh.png" alt="Racing Besançon" style={{ height: 44, width: 'auto' }} />
-          </div>
-          <span style={{ color: 'white', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 20, letterSpacing: 1 }}>RACING BESANÇON</span>
-        </div>
+  <div style={{ display: 'flex', alignItems: 'center' }}>
+    <img src="https://i.imgur.com/uFFm3Lh.png" alt="Racing Besançon" style={{ height: 50, width: 'auto' }} />
+  </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className={`nav-link ${page === 'accueil' ? 'active' : ''}`} onClick={() => setPage('accueil')}>Accueil</button>
           <button className={`nav-link ${page === 'reservation' ? 'active' : ''}`} onClick={() => { setPage('reservation'); setSubmitSuccess(false); }}>Réserver</button>
