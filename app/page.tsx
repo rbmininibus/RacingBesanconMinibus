@@ -191,7 +191,8 @@ export default function Home() {
       {page === 'accueil' && (
         <div>
           {/* Hero */}
-          <div style={{ background: 'linear-gradient(135deg, #111 0%, #1a1a1a 50%, #C8102E 100%)', padding: '80px 5% 80px', textAlign: 'center', color: 'white' }}>
+          <div style={{ background: 'linear-gradient(135deg, #111 0%, #1a1a1a 50%, #C8102E 100%)', padding: '80px 5% 80px', textAlign: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
+  <img src="https://i.imgur.com/uFFm3Lh.png" alt="" style={{ position: 'absolute', right: '-50px', top: '50%', transform: 'translateY(-50%)', height: '340px', width: 'auto', opacity: 0.08, pointerEvents: 'none', userSelect: 'none' }} />
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(200,16,46,0.2)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: 20, padding: '6px 16px', marginBottom: 24 }}>
               <span style={{ width: 8, height: 8, background: '#C8102E', borderRadius: '50%', display: 'inline-block' }}></span>
               <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Service minibus du club</span>
