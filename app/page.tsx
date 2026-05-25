@@ -128,16 +128,24 @@ export default function Home() {
     setLoading(false)
   }
 
-  function handleAdminLogin(e: React.FormEvent) {
-    e.preventDefault()
-    if (adminPassword === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || adminPassword === 'admin123') {
-      setAdminAuthenticated(true)
-      setAdminError('')
-      loadReservations()
-    } else {
-      setAdminError('Mot de passe incorrect.')
-    }
+  functionasync function handleAdminLogin(e: React.FormEvent) {
+  e.preventDefault()
+  setAdminError('')
+  setLoading(true)
+  
+  const { error } = await supabase.auth.signInWithPassword({
+    email: adminEmail,
+    password: adminPassword,
+  })
+  
+  if (error) {
+    setAdminError('Email ou mot de passe incorrect.')
+  } else {
+    setAdminAuthenticated(true)
+    loadReservations()
   }
+  setLoading(false)
+}
 
   async function updateStatut(id: string, statut: 'validee' | 'refusee') {
     await fetch(`/api/reservations/${id}/status`, {
