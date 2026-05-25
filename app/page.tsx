@@ -177,9 +177,7 @@ export default function Home() {
 
       {/* NAV */}
       <nav style={{ background: '#111', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, background: '#C8102E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: 'white', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 14 }}>RB</span>
+<img src="https://i.imgur.com/uFFm3Lh.png" alt="Racing Besançon" style={{ height: 44, width: 'auto' }} />
           </div>
           <span style={{ color: 'white', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 20, letterSpacing: 1 }}>RACING BESANÇON</span>
         </div>
