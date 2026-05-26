@@ -45,6 +45,7 @@ export default function Home() {
   const [page, setPage] = useState<'accueil' | 'reservation' | 'admin'>('accueil')
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([])
+  const [adminEmail, setAdminEmail] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminAuthenticated, setAdminAuthenticated] = useState(false)
   const [adminError, setAdminError] = useState('')
@@ -84,11 +85,7 @@ export default function Home() {
     if (!minibusId || !date || !heureDepart || !heureRetour) return false
     return blockedSlots.some(slot => {
       if (slot.minibus_id !== minibusId || slot.date_depart !== date) return false
-      const newStart = heureDepart
-      const newEnd = heureRetour
-      const existStart = slot.heure_depart
-      const existEnd = slot.heure_retour
-      return newStart < existEnd && newEnd > existStart
+      return heureDepart < slot.heure_retour && heureRetour > slot.heure_depart
     })
   }
 
@@ -128,24 +125,31 @@ export default function Home() {
     setLoading(false)
   }
 
-  functionasync function handleAdminLogin(e: React.FormEvent) {
-  e.preventDefault()
-  setAdminError('')
-  setLoading(true)
-  
-  const { error } = await supabase.auth.signInWithPassword({
-    email: adminEmail,
-    password: adminPassword,
-  })
-  
-  if (error) {
-    setAdminError('Email ou mot de passe incorrect.')
-  } else {
-    setAdminAuthenticated(true)
-    loadReservations()
+  async function handleAdminLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setAdminError('')
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: adminEmail,
+      password: adminPassword,
+    })
+
+    if (error) {
+      setAdminError('Email ou mot de passe incorrect.')
+    } else {
+      setAdminAuthenticated(true)
+      loadReservations()
+    }
+    setLoading(false)
   }
-  setLoading(false)
-}
+
+  async function handleAdminLogout() {
+    await supabase.auth.signOut()
+    setAdminAuthenticated(false)
+    setAdminEmail('')
+    setAdminPassword('')
+  }
 
   async function updateStatut(id: string, statut: 'validee' | 'refusee') {
     await fetch(`/api/reservations/${id}/status`, {
@@ -185,9 +189,9 @@ export default function Home() {
 
       {/* NAV */}
       <nav style={{ background: '#111', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-  <div style={{ display: 'flex', alignItems: 'center' }}>
-   <img src="https://i.imgur.com/I53aYMn.png" alt="Racing Besançon" style={{ height: 50, width: 'auto' }} />
-  </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="https://i.imgur.com/I53aYMn.png" alt="Racing Besançon" style={{ height: 50, width: 'auto' }} />
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className={`nav-link ${page === 'accueil' ? 'active' : ''}`} onClick={() => setPage('accueil')}>Accueil</button>
           <button className={`nav-link ${page === 'reservation' ? 'active' : ''}`} onClick={() => { setPage('reservation'); setSubmitSuccess(false); }}>Réserver</button>
@@ -200,18 +204,18 @@ export default function Home() {
         <div>
           {/* Hero */}
           <div style={{ background: 'linear-gradient(135deg, #111 0%, #1a1a1a 50%, #C8102E 100%)', padding: '80px 5% 80px', textAlign: 'center', color: 'white', position: 'relative', overflow: 'hidden' }}>
-<img src="https://i.imgur.com/I53aYMn.png" alt="" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', height: '420px', width: 'auto', opacity: 0.12, pointerEvents: 'none', userSelect: 'none' }} />
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(200,16,46,0.2)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: 20, padding: '6px 16px', marginBottom: 24 }}>
+            <img src="https://i.imgur.com/I53aYMn.png" alt="" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', height: '420px', width: 'auto', opacity: 0.12, pointerEvents: 'none', userSelect: 'none' }} />
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(200,16,46,0.2)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: 20, padding: '6px 16px', marginBottom: 24, position: 'relative' }}>
               <span style={{ width: 8, height: 8, background: '#C8102E', borderRadius: '50%', display: 'inline-block' }}></span>
               <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Service minibus du club</span>
             </div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 8vw, 80px)', lineHeight: 1, marginBottom: 20, textTransform: 'uppercase' }}>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 8vw, 80px)', lineHeight: 1, marginBottom: 20, textTransform: 'uppercase', position: 'relative' }}>
               RÉSERVATION<br /><span style={{ color: '#C8102E' }}>MINIBUS</span>
             </h1>
-            <p style={{ fontSize: 18, opacity: 0.8, maxWidth: 500, margin: '0 auto 36px' }}>
+            <p style={{ fontSize: 18, opacity: 0.8, maxWidth: 500, margin: '0 auto 36px', position: 'relative' }}>
               Réservez l'un des 3 minibus du Racing Besançon pour vos déplacements sportifs.
             </p>
-            <button className="btn-red" style={{ fontSize: 16, padding: '14px 36px' }} onClick={() => setPage('reservation')}>
+            <button className="btn-red" style={{ fontSize: 16, padding: '14px 36px', position: 'relative' }} onClick={() => setPage('reservation')}>
               Faire une réservation →
             </button>
           </div>
@@ -221,7 +225,7 @@ export default function Home() {
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 32, textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>Nos 3 minibus</h2>
             <p style={{ textAlign: 'center', color: '#666', marginBottom: 40 }}>Disponibles pour tous les organismes et catégories du club</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24, maxWidth: 900, margin: '0 auto' }}>
-              {MINIBUSES.map((m, i) => (
+              {MINIBUSES.map((m) => (
                 <div key={m.id} style={{ background: 'white', borderRadius: 12, padding: '28px 24px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderTop: '4px solid #C8102E' }}>
                   <div style={{ width: 64, height: 64, background: '#fff0f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                     <span style={{ fontSize: 28 }}>🚌</span>
@@ -233,7 +237,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Infos */}
+          {/* Comment ça marche */}
           <div style={{ background: '#111', color: 'white', padding: '50px 5%', textAlign: 'center' }}>
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 28, textTransform: 'uppercase', marginBottom: 32 }}>Comment ça marche ?</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32, maxWidth: 800, margin: '0 auto' }}>
@@ -345,16 +349,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Vérification disponibilité */}
                 {form.minibus_id && form.date_depart && form.heure_depart && form.heure_retour && (
                   <div style={{
-                    marginTop: 16,
-                    padding: '12px 16px',
-                    borderRadius: 8,
+                    marginTop: 16, padding: '12px 16px', borderRadius: 8,
                     background: isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour) ? '#F8D7DA' : '#D1E7DD',
                     color: isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour) ? '#842029' : '#0F5132',
-                    fontWeight: 600,
-                    fontSize: 14
+                    fontWeight: 600, fontSize: 14
                   }}>
                     {isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour)
                       ? '⚠️ Ce minibus est déjà réservé sur ce créneau.'
@@ -385,12 +385,18 @@ export default function Home() {
               <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 36, textTransform: 'uppercase', marginBottom: 8 }}>Espace Admin</h1>
               <p style={{ color: '#666', marginBottom: 32 }}>Accès réservé aux administrateurs.</p>
               <form onSubmit={handleAdminLogin} style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label>Email</label>
+                  <input type="email" required value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@email.com" />
+                </div>
                 <div className="form-group" style={{ marginBottom: 20 }}>
                   <label>Mot de passe</label>
-                  <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="••••••••" />
+                  <input type="password" required value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="••••••••" />
                 </div>
                 {adminError && <p style={{ color: '#C8102E', fontSize: 14, marginBottom: 12, fontWeight: 600 }}>{adminError}</p>}
-                <button type="submit" className="btn-red" style={{ width: '100%' }}>Se connecter</button>
+                <button type="submit" className="btn-red" disabled={loading} style={{ width: '100%' }}>
+                  {loading ? 'Connexion...' : 'Se connecter'}
+                </button>
               </form>
             </div>
           ) : (
@@ -400,7 +406,7 @@ export default function Home() {
                   <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 36, textTransform: 'uppercase' }}>Tableau de bord</h1>
                   <p style={{ color: '#666' }}>{reservations.length} réservation(s) au total</p>
                 </div>
-                <button className="btn-outline" onClick={() => { setAdminAuthenticated(false); setAdminPassword(''); }}>Déconnexion</button>
+                <button className="btn-outline" onClick={handleAdminLogout}>Déconnexion</button>
               </div>
 
               {/* Stats */}
@@ -419,14 +425,13 @@ export default function Home() {
               </div>
 
               {/* Filtres */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                 {(['tous', 'en_attente', 'validee', 'refusee'] as const).map(f => (
                   <button key={f} onClick={() => setAdminFilter(f)} style={{
                     padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
                     fontFamily: "'Barlow', sans-serif", fontWeight: 600, fontSize: 13,
                     background: adminFilter === f ? '#111' : '#e0e0e0',
                     color: adminFilter === f ? 'white' : '#444',
-                    textTransform: 'capitalize'
                   }}>
                     {f === 'tous' ? 'Toutes' : f === 'en_attente' ? 'En attente' : f === 'validee' ? 'Validées' : 'Refusées'}
                   </button>
