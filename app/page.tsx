@@ -308,8 +308,10 @@ export default function Home() {
           </div>
 
           <div style={{ padding: '60px 5%' }}>
-            <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 32, textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>Nos 3 minibus</h2>
-            <p style={{ textAlign: 'center', color: '#666', marginBottom: 40 }}>Disponibles pour tous les organismes et catégories du club</p>
+          <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 32, textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>Nos 3 minibus</h2>
+<p style={{ textAlign: 'center', color: '#666', marginBottom: 40, maxWidth: 700, margin: '0 auto 40px', lineHeight: 1.7 }}>
+  Nous disposons de 3 minibus au sein du Racing Besançon, disponibles pour vos déplacements sportifs et ceux des associations partenaires. Afin d'assurer un suivi optimal de nos véhicules, nous vous demandons d'effectuer une réservation en ligne avant tout déplacement. Nous comptons sur votre sérieux et votre respect du matériel mis à disposition — nos minibus sont un outil collectif au service de tous. Merci de les restituer propres et en bon état. 🚌
+</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24, maxWidth: 900, margin: '0 auto' }}>
               {MINIBUSES.map((m) => (
                 <div key={m.id} style={{ background: 'white', borderRadius: 12, padding: '28px 24px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderTop: '4px solid #C8102E' }}>
