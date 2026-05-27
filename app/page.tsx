@@ -55,11 +55,9 @@ export default function Home() {
   const [adminFilter, setAdminFilter] = useState<'tous' | 'en_attente' | 'validee' | 'refusee'>('en_attente')
   const [adminTab, setAdminTab] = useState<'reservations' | 'planning'>('reservations')
 
-  // Attribution minibus lors validation
   const [validationModal, setValidationModal] = useState<Reservation | null>(null)
   const [selectedMinibus, setSelectedMinibus] = useState('')
 
-  // Mes réservations
   const [searchEmail, setSearchEmail] = useState('')
   const [mesReservations, setMesReservations] = useState<Reservation[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -67,7 +65,7 @@ export default function Home() {
 
   const [form, setForm] = useState({
     nom: '', prenom: '', email: '', telephone: '',
-    organisme: '', categorie: '', minibus_id: '',
+    organisme: '', categorie: '',
     date_depart: '', heure_depart: '', heure_retour: '',
     destination: '', nb_passagers: 1, commentaire: ''
   })
@@ -90,35 +88,25 @@ export default function Home() {
     if (data) setReservations(data)
   }
 
-  function isSlotBlocked(minibusId: string, date: string, heureDepart: string, heureRetour: string) {
-    if (!minibusId || !date || !heureDepart || !heureRetour) return false
-    return blockedSlots.some(slot => {
-      if (slot.minibus_id !== minibusId || slot.date_depart !== date) return false
-      return heureDepart < slot.heure_retour && heureRetour > slot.heure_depart
-    })
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError('')
-    if (isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour)) {
-      setSubmitError('Ce minibus est déjà réservé sur ce créneau.')
-      return
-    }
+
     if (form.heure_depart >= form.heure_retour) {
       setSubmitError("L'heure de retour doit être après l'heure de départ.")
       return
     }
+
     setLoading(true)
     try {
       const res = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, minibus_id: 'non-attribue' })
       })
       if (!res.ok) throw new Error('Erreur serveur')
       setSubmitSuccess(true)
-      setForm({ nom: '', prenom: '', email: '', telephone: '', organisme: '', categorie: '', minibus_id: '', date_depart: '', heure_depart: '', heure_retour: '', destination: '', nb_passagers: 1, commentaire: '' })
+      setForm({ nom: '', prenom: '', email: '', telephone: '', organisme: '', categorie: '', date_depart: '', heure_depart: '', heure_retour: '', destination: '', nb_passagers: 1, commentaire: '' })
       loadBlockedSlots()
     } catch {
       setSubmitError('Une erreur est survenue. Veuillez réessayer.')
@@ -149,7 +137,7 @@ export default function Home() {
 
   function openValidationModal(r: Reservation) {
     setValidationModal(r)
-    setSelectedMinibus(r.minibus_id)
+    setSelectedMinibus('minibus-1')
   }
 
   async function confirmValidation() {
@@ -190,7 +178,6 @@ export default function Home() {
     setSearchLoading(false)
   }
 
-  // Génère les 14 prochains jours
   function getNext14Days() {
     const days = []
     for (let i = 0; i < 14; i++) {
@@ -245,7 +232,6 @@ export default function Home() {
         .planning-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .planning-table th { background: #111; color: white; padding: 10px 8px; text-align: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
         .planning-table td { border: 1px solid #e0e0e0; padding: 8px; vertical-align: top; min-width: 120px; background: white; }
-        .planning-table tr:hover td { background: #fafafa; }
         .planning-cell { background: #D1E7DD; border-radius: 6px; padding: 6px 8px; margin: 2px 0; font-size: 12px; color: #0F5132; }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal { background: white; border-radius: 12px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -256,22 +242,28 @@ export default function Home() {
         <div className="modal-overlay" onClick={() => setValidationModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 24, textTransform: 'uppercase', marginBottom: 8 }}>
-              Valider la réservation
+              Attribuer un minibus
             </h2>
+            <p style={{ color: '#666', marginBottom: 4, fontSize: 14 }}>
+              <strong>{validationModal.prenom} {validationModal.nom}</strong> — {validationModal.organisme} ({validationModal.categorie})
+            </p>
             <p style={{ color: '#666', marginBottom: 24, fontSize: 14 }}>
-              {validationModal.prenom} {validationModal.nom} — {new Date(validationModal.date_depart).toLocaleDateString('fr-FR')} • {validationModal.heure_depart} → {validationModal.heure_retour}
+              📅 {new Date(validationModal.date_depart).toLocaleDateString('fr-FR')} • {validationModal.heure_depart} → {validationModal.heure_retour} • 📍 {validationModal.destination}
             </p>
             <div className="form-group" style={{ marginBottom: 24 }}>
-              <label>Minibus attribué *</label>
+              <label>Minibus à attribuer *</label>
               <select value={selectedMinibus} onChange={e => setSelectedMinibus(e.target.value)}>
                 {MINIBUSES.map(m => (
                   <option key={m.id} value={m.id}>{m.name} ({m.places} places)</option>
                 ))}
               </select>
+              <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                Un email de confirmation avec le minibus attribué sera envoyé automatiquement.
+              </p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn-green" onClick={confirmValidation} style={{ flex: 1, padding: '12px' }}>
-                ✓ Confirmer la validation
+                ✓ Valider et notifier
               </button>
               <button className="btn-outline" onClick={() => setValidationModal(null)} style={{ padding: '12px 20px' }}>
                 Annuler
@@ -307,7 +299,7 @@ export default function Home() {
               RÉSERVATION<br /><span style={{ color: '#C8102E' }}>MINIBUS</span>
             </h1>
             <p style={{ fontSize: 18, opacity: 0.8, maxWidth: 500, margin: '0 auto 36px', position: 'relative' }}>
-              Réservez l'un des 3 minibus du Racing Besançon pour vos déplacements sportifs.
+              Réservez un minibus du Racing Besançon pour vos déplacements sportifs.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', position: 'relative' }}>
               <button className="btn-red" style={{ fontSize: 16, padding: '14px 36px' }} onClick={() => setPage('reservation')}>Faire une réservation →</button>
@@ -335,9 +327,9 @@ export default function Home() {
             <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 28, textTransform: 'uppercase', marginBottom: 32 }}>Comment ça marche ?</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32, maxWidth: 900, margin: '0 auto' }}>
               {[
-                { n: '01', t: 'Remplissez le formulaire', d: 'Choisissez votre minibus, date et horaire' },
-                { n: '02', t: 'Validation admin', d: "L'admin attribue un minibus et valide" },
-                { n: '03', t: 'Confirmation par mail', d: 'Vous recevez un email de confirmation' },
+                { n: '01', t: 'Faites votre demande', d: 'Renseignez vos infos et votre créneau' },
+                { n: '02', t: 'Attribution admin', d: "L'admin vous attribue un minibus disponible" },
+                { n: '03', t: 'Confirmation par mail', d: 'Vous recevez le minibus attribué par email' },
                 { n: '04', t: 'Rappel automatique', d: 'Un rappel est envoyé 24h avant le départ' },
               ].map(s => (
                 <div key={s.n}>
@@ -355,13 +347,13 @@ export default function Home() {
       {page === 'reservation' && (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '50px 5%' }}>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 36, textTransform: 'uppercase', marginBottom: 8 }}>Nouvelle réservation</h1>
-          <p style={{ color: '#666', marginBottom: 36 }}>Remplissez le formulaire. Votre demande sera validée par l'administration.</p>
+          <p style={{ color: '#666', marginBottom: 36 }}>Remplissez le formulaire. Un minibus vous sera attribué par l'administration.</p>
 
           {submitSuccess ? (
             <div style={{ background: '#D1E7DD', border: '1px solid #A3CFBB', borderRadius: 12, padding: 32, textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
               <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 24, color: '#0F5132', marginBottom: 12 }}>Demande envoyée !</h2>
-              <p style={{ color: '#0F5132', marginBottom: 24 }}>Votre demande a bien été envoyée. Vous recevrez un email de confirmation une fois validée. Un rappel vous sera envoyé 24h avant le départ.</p>
+              <p style={{ color: '#0F5132', marginBottom: 24 }}>Votre demande a bien été reçue. L'administration va vous attribuer un minibus et vous recevrez un email de confirmation avec les détails.</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button className="btn-red" onClick={() => { setSubmitSuccess(false); setPage('accueil'); }}>Retour à l'accueil</button>
                 <button className="btn-outline" onClick={() => { setSubmitSuccess(false); setPage('mes-reservations'); }}>Voir mes réservations</button>
@@ -389,14 +381,17 @@ export default function Home() {
 
               <div style={{ background: 'white', borderRadius: 12, padding: 28, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 20, textTransform: 'uppercase', marginBottom: 20, borderBottom: '2px solid #C8102E', paddingBottom: 10 }}>Détails du déplacement</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>Minibus souhaité *</label>
-                    <select required value={form.minibus_id} onChange={e => setForm(f => ({ ...f, minibus_id: e.target.value }))}>
-                      <option value="">Sélectionner un minibus...</option>
-                      {MINIBUSES.map(m => <option key={m.id} value={m.id}>{m.name} ({m.places} places)</option>)}
-                    </select>
+
+                {/* Bandeau minibus */}
+                <div style={{ background: 'linear-gradient(135deg, #111, #1a1a1a)', borderRadius: 10, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 32 }}>🚌</span>
+                  <div>
+                    <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>Demande de réservation d'un minibus</div>
+                    <div style={{ color: '#aaa', fontSize: 13 }}>Un minibus vous sera attribué par l'administration après validation</div>
                   </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}><label>Date *</label><input type="date" required min={today} value={form.date_depart} onChange={e => setForm(f => ({ ...f, date_depart: e.target.value }))} /></div>
                   <div className="form-group"><label>Heure de départ *</label><input type="time" required value={form.heure_depart} onChange={e => setForm(f => ({ ...f, heure_depart: e.target.value }))} /></div>
                   <div className="form-group"><label>Heure de retour *</label><input type="time" required value={form.heure_retour} onChange={e => setForm(f => ({ ...f, heure_retour: e.target.value }))} /></div>
@@ -404,11 +399,6 @@ export default function Home() {
                   <div className="form-group"><label>Nombre de passagers *</label><input type="number" min={1} max={9} required value={form.nb_passagers} onChange={e => setForm(f => ({ ...f, nb_passagers: parseInt(e.target.value) }))} /></div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}><label>Commentaire (optionnel)</label><textarea rows={3} value={form.commentaire} onChange={e => setForm(f => ({ ...f, commentaire: e.target.value }))} placeholder="Informations supplémentaires..." style={{ resize: 'vertical' }} /></div>
                 </div>
-                {form.minibus_id && form.date_depart && form.heure_depart && form.heure_retour && (
-                  <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour) ? '#F8D7DA' : '#D1E7DD', color: isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour) ? '#842029' : '#0F5132', fontWeight: 600, fontSize: 14 }}>
-                    {isSlotBlocked(form.minibus_id, form.date_depart, form.heure_depart, form.heure_retour) ? '⚠️ Ce minibus est déjà réservé sur ce créneau.' : '✅ Créneau disponible !'}
-                  </div>
-                )}
               </div>
 
               {submitError && <div style={{ background: '#F8D7DA', color: '#842029', padding: '12px 16px', borderRadius: 8, fontWeight: 600 }}>⚠️ {submitError}</div>}
@@ -457,7 +447,7 @@ export default function Home() {
                           <span style={{ background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{s.label}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px 24px', fontSize: 14, color: '#555' }}>
-                          <span>🚌 {MINIBUSES.find(m => m.id === r.minibus_id)?.name || r.minibus_id}</span>
+                          <span>🚌 {r.statut === 'validee' ? (MINIBUSES.find(m => m.id === r.minibus_id)?.name || r.minibus_id) : 'Minibus à attribuer'}</span>
                           <span>🕐 {r.heure_depart} → {r.heure_retour}</span>
                           <span>📍 {r.destination}</span>
                           <span>👥 {r.organisme} — {r.categorie}</span>
@@ -504,7 +494,6 @@ export default function Home() {
                 <button className="btn-outline" onClick={handleAdminLogout}>Déconnexion</button>
               </div>
 
-              {/* Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
                 {[
                   { label: 'En attente', count: reservations.filter(r => r.statut === 'en_attente').length, color: '#856404', bg: '#FFF3CD' },
@@ -519,13 +508,11 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Tabs */}
               <div style={{ borderBottom: '2px solid #e0e0e0', marginBottom: 24, display: 'flex', gap: 0 }}>
                 <button className={`admin-tab ${adminTab === 'reservations' ? 'active' : ''}`} onClick={() => setAdminTab('reservations')}>📋 Réservations</button>
                 <button className={`admin-tab ${adminTab === 'planning' ? 'active' : ''}`} onClick={() => setAdminTab('planning')}>📅 Planning 2 semaines</button>
               </div>
 
-              {/* TAB RESERVATIONS */}
               {adminTab === 'reservations' && (
                 <div>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -549,7 +536,7 @@ export default function Home() {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4px 24px', fontSize: 14, color: '#555' }}>
                               <span>📅 {new Date(r.date_depart).toLocaleDateString('fr-FR')} • {r.heure_depart} → {r.heure_retour}</span>
-                              <span>🚌 {MINIBUSES.find(m => m.id === r.minibus_id)?.name || r.minibus_id}</span>
+                              <span>🚌 {r.statut === 'validee' ? (MINIBUSES.find(m => m.id === r.minibus_id)?.name || r.minibus_id) : '⏳ À attribuer'}</span>
                               <span>📍 {r.destination}</span>
                               <span>👥 {r.organisme} — {r.categorie}</span>
                               <span>✉️ {r.email}</span>
@@ -559,7 +546,7 @@ export default function Home() {
                           </div>
                           {r.statut === 'en_attente' && (
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <button className="btn-green" onClick={() => openValidationModal(r)}>✓ Valider</button>
+                              <button className="btn-green" onClick={() => openValidationModal(r)}>🚌 Attribuer & Valider</button>
                               <button onClick={() => updateStatut(r.id, 'refusee')} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontFamily: "'Barlow', sans-serif" }}>✗ Refuser</button>
                             </div>
                           )}
@@ -570,7 +557,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* TAB PLANNING */}
               {adminTab === 'planning' && (
                 <div>
                   <p style={{ color: '#666', marginBottom: 20, fontSize: 14 }}>Planning des 14 prochains jours — réservations validées uniquement</p>
